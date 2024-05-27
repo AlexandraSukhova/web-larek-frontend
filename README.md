@@ -95,12 +95,12 @@ type TBasketInfo = Pick<IOrder, 'items' | 'total'>;
 Данные введенные пользователем в форме выбора способа оплаты и адресса доставки
 
 ```
-type TOrderInfo = Pick<IOrder, 'payment' | 'address'>;
+type TOrderInfoForm = Pick<IOrder, 'payment' | 'address'>;
 ```
 Данные введенные пользователем в форме сбора информации о номере телефона и электронной почте покупателя
 
 ```
-type TUserInfo = Pick<IOrder, 'phone' | 'email'>; 
+type TUserInfoForm = Pick<IOrder, 'phone' | 'email'>; 
 ```
 
 Данные для отображеня в форме подтверждения заказа
@@ -109,40 +109,45 @@ type TUserInfo = Pick<IOrder, 'phone' | 'email'>;
 export type TOrderSuccess = Pick<IOrder, 'total'>;
 ```
 
+Тип данных для хранения информации о покупателе
+
+```
+export type TOrderInfo = Pick<IOrder, 'payment' | 'address' | 'email' | 'phone'>;
+```
+
 Интерфейс для модели данных товаров
 
 ```
 export interface IProductData {
-  productCards: IProduct[];
-  preview: TProductSelected | null;
-  basketProducts: TProductSelected[];
-  getCard(productId: TProductSelected): IProduct;
-  addProduct(product: TProductSelected, payload: Function | null): void;
-  deleteProduct(product: TProductSelected, payload: Function | null): void;
-  checkProductId(id: TProductSelected, basketList: TProductSelected[]): boolean;
+  productCards: IProduct[];  //Массив карточек
+  preview: TProductSelected | null;  //Id выбранной карточки
+  getCard(productId: TProductSelected): IProduct;  //Получить информацию о выбранной карточке по id из массива всех карточек
+  setProduct(product: TProductSelected, payload: Function | null): void;  //Добавление id карточки в массив корзины
+  deleteProduct(product: TProductSelected, payload: Function | null): void;  //Удаление id карточки из корзины
+  getProductList(): IProduct[];  //Получить массив всех карточек продукта с сервера в определенном формате
 }
 ```
 Интерфейс для модели данных оформления заказа
 
 ```
 export interface IOrderData {
-  getUserInfo(): TUserInfo;
-  getOrderInfo(): TOrderInfo;
-  getBasketInfo(): TBasketInfo;
-  setFullOrderInfo(userData: IOrder): void;
-  checkOrderValidation(data: Record<keyof TOrderInfo, string>): boolean;
-  checkUserInfo(data: Record<keyof TUserInfo, string>): boolean;
+  payment: TPayment //способ оплаты товара 
+  email: string //электронная почта покупателя 
+  phone: string //номер телефона покупателя 
+  address: string //адресс покупателя
+  getOrderInfo(orderInfo: TOrderInfo, productInfo: TProductSelected[]): IOrder; //получает данные пользователя о заказе
+  setFullOrderInfo(userData: IOrder): void; //отправляет данные о заказе в определенном формате на сервер (покупка)
+  checkOrderValidation(data: Record<keyof TOrderInfo, string>): boolean; // проверяет валидность введенных данных
 }
 ```
 Интерфейс для модели данных корзины с заказами
 
 ```
 export interface IBasketData {
-  basketCards: TBasketProduct[];
-  selected: TProductSelected | null;
-  getTotalPrice(prices: number[]): number;
-  deleteProduct(product: TProductSelected, payload: Function | null): void;
-  checkProductId(id: TProductSelected, basketList: TBasketProduct[]): boolean;
+  basketCards: TProductSelected[];  //список id добавленных в корзину карточек
+  getTotalPrice(prices: number[]): number;  //получение общей суммы суммы заказа
+  checkProductId(id: TProductSelected, basketList: TProductSelected[]): boolean;  //проверяет id карточек при добавлении в корзину
+  resetProductBasket(): void;  //удаление id всех товаров из списка корзины после успешного оформления заказа
 }
 ```
 Интерфейс отображения данных на главной странице
@@ -150,7 +155,6 @@ export interface IBasketData {
 ```
 export interface IPage {
   basketCount: HTMLElement;
-  count: number;
   galeryList: HTMLUListElement;
   render(card: HTMLElement): void;
 }
@@ -211,14 +215,13 @@ interface galleryCard {
 В полях класса хранятся следующие данные:
 - _productCards: IProduct[] - массив объектов карточек
 - _preview: string | null - id карточки, выбранной для просмотра в модальной окне или добавленной в корзину.
-- _basketProducts: TProductSelected[] - массив из id карточек, находящихся в корзине.
 - events: IEvents - экземпляр класса `EventEmitter` для инициации событий при изменении данных.
 
 Так же класс предоставляет набор методов для взаимодействия с этими данными.
-- addProduct(product: TProductSelected, payload: Function | null): void - добавляет id выбранной карточки в массив корзины.
-- deleteProduct(product: TProductSelected, payload: Function | null): void - удаляет id карточкb из массива. Если передан колбэк, то выполняет его после удаления, если нет, то вызывает событие изменения массива.
-- getCard(productId: TProductSelected): IProduct - возвращает карточку по ее id.
-- checkProductId(id: TProductSelected, basketList: TProductSelected[]): boolean - проверяет есть ли id выбранной для добавляения или удаления карточки в массиве товаров корзины.
+- setProduct(product: TProductSelected, payload: Function | null): void - добавляет id выбранной карточки в массив корзины.
+- deleteProduct(product: TProductSelected, payload: Function | null): void - удаляет id карточки из массива корзины. Если передан колбэк, то выполняет его после удаления, если нет, то вызывает событие изменения массива.
+- getCard(productId: TProductSelected): IProduct - возвращает информацию о выбранной карточке из массива по ее id.
+- getProductList(): IProduct[] - получает массив всех карточек с сервера.
 - а так-же сеттеры и геттеры для сохранения и получения данных из полей класса.
 
 #### Класс OrderData
@@ -229,16 +232,11 @@ interface galleryCard {
 - _email: string - электронная почта покупателя
 - _phone: string - номер телефона покупателя
 - _address: string - адресс доставки
-- _total: number | null - общая сумма покупки
-- _items: TProductSelected[] - массив id купленных товаров
 - events: IEvents - экземпляр класса `EventEmitter` для инициации событий при изменении данных.
 
 Так же класс предоставляет набор методов для взаимодействия с этими данными.\
-- getUserInfo(): TUserInfo - получение данных о номере телефона и электронной почте
-- getOrderInfo(): TOrderInfo - получение данных о адрессе доставки и способе оплаты
-- getBasketInfo(): TBasketInfo - получение данных о выбранных товарах
-- setFullOrderInfo(userData: IOrder): void - сохраняет данные пользователя в классе
-- checkUserInfo(data: Record<keyof TUserInfo, string>): boolean - проверяет объект с данными пользователя на валидность
+- getOrderInfo(orderInfo: TOrderInfo, productInfo: TProductSelected[]): IOrder - получение данных о адрессе доставки, способе оплаты, приобретаемых товарах
+- setFullOrderInfo(userData: IOrder): void - отправляет данные о заказе в определенном формате на сервер (имитация покупки и оплаты)
 - checkOrderValidation(data: Record<keyof TOrderInfo, string>): boolean; - проверяет объект с данными заказа на валидность.
 
 #### Класс BasketData
@@ -246,11 +244,11 @@ interface galleryCard {
 Конструктор класса принимает инстант брокера событий\
 В полях класса хранятся следующие данные:
 - _basketCards: TBasketProduct[] - массив выбранных карточек
-- _selected: TProductSelected | null - выбранная карточка для удаления из корзины
 
 Так же класс предоставляет набор методов для взаимодействия с этими данными.\
 - getTotalPrice(prices: number[]): number - получение общей суммы заказа
-- deleteProduct(product: TProductSelected, payload: Function | null): void - удаление id выбранной карточки из массива корзины.
+- checkProductId(id: TProductSelected, basketList: TProductSelected[]): boolean; - проверяет id карточек перед добавлением в корзину
+- resetProductBasket(): void; - удаление id всех товаров из списка корзины после успешного оформления заказа
 
 ### Классы представления
 Все классы представления отвечают за отображение внутри контейнера (DOM-элемент) передаваемых в них данных.
@@ -260,7 +258,6 @@ interface galleryCard {
 
 Поля класса:
 - _basketCount: HTMLElement - элемент страницы для отображения количества товаров в корзине
-- _count: number - количество товаров в корзине
 - _galeryList: HTMLUListElement - элемент страницы для отображения списка всех карточек товара
 
 Методы:
@@ -268,14 +265,14 @@ interface galleryCard {
 
 #### Класс Modal
 Реализует модальное окно. Так же предоставляет методы `open` и `close` для управления отображением модального окна. Устанавливает слушатели на клавиатуру, для закрытия модального окна по Esc, на клик в оверлей и кнопку-крестик для закрытия попапа.  
-- constructor(template: string, events: IEvents) Конструктор принимает класс темплейта, по которому в разметке страницы будет идентифицировано модальное окно и экземпляр класса `EventEmitter` для возможности инициации событий.
+- constructor(id: string, events: IEvents) Конструктор принимает id, по которому в разметке страницы будет идентифицировано модальное окно и экземпляр класса `EventEmitter` для возможности инициации событий.
 
 Поля класса
 - _modal: HTMLElement - элемент модального окна
 - _events: IEvents - брокер событий
 
 Методы:
-- addConten(elem: HTMLTemplateElement): void - добавление темплейта с выбранным контентом
+- addConten(elem: HTMLElement): void - добавление собранного элемента разметки с выбранным контентом
 - openModal(): void - открытие модального окна
 - closeModal(): void - закрытие модального окна
 
@@ -311,48 +308,20 @@ interface galleryCard {
 Расширяет класс Modal. Предназначен для реализации модального окна с отображением успешной оплаты заказа. При открытии модального окна получает данные суммы списания, которые нужно отобразить.\
 
 Поля класса:
-- _total: number - общая сумма заказа
 - _totalOrderPrice: HTMLElement - элемент разметки для вывода общей оплачнной суммы
 - _submitButton: HTMLButtonElement - элемент разметки кнопки перейти к покупкам
 
 Методы:
-- closeModal(): void - расширение родительского метода, проверка и изменения статуса кнопок товаров в галерее, удаление товаров из корзины.
+- closeModal(): void - расширение родительского метода, проверка и изменения статуса кнопок товаров в галерее, удаление товаров из корзины, закрытие модального окна при нажатии на кнопку перейти к покупкам.
 
-#### Класс ProductModal
-Расширяет класс Modal. Предназначен для реализации модального окна с отображением карточки товара. При открытии модального окна получает собранный элемент разметки, выбранной карточки, который нужно отобразить.\
-
-Поля класса:
-- _addButton: HTMLButtonElement - элемент разметки кнопки добавления товара в корзину
-- _addButtonText: string - строка для присвоения текста кнопке, если товара нет в корзине
-- _deleteButtonText: string - строка для присвоения текста кнопки, если товар добавлен в корзину
-
-Методы:
-- checkButtonStatus(): boolean - метод для проверки есть ли выбранный товар в корзине.
-
-#### Класс galleryCard
-Отвечает за отображение карточки, задавая в карточке данные названия, изображения, категории, цены. Класс используется для отображения карточек на странице сайта. В конструктор класса передается DOM элемент темплейта, что позволяет при необходимости формировать карточки разных вариантов верстки. В классе устанавливаются слушатели на все интерактивные элементы, в результате взаимодействия с которыми пользователя генерируются соответствующие события.\
+#### Класс productCard
+Отвечает за отображение карточки товара, задавая в карточке данные названия, изображения, категории, цены, а также возможность реагировать на действия пользователя добавить и удалить товар. Класс используется для отображения карточек на странице сайта. В конструктор класса передается DOM элемент темплейта, что позволяет при необходимости формировать карточки разных вариантов верстки. В классе устанавливаются слушатели на все интерактивные элементы, в результате взаимодействия с которыми пользователя генерируются соответствующие события.\
 Поля класса содержат элементы разметки элементов карточки. Конструктор, кроме темплейта принимает экземпляр `EventEmitter` для инициации событий.\
 Методы:
 - setProductInfo(userData: IProduct): void - заполняет атрибуты элементов карточки данными
-- render(): HTMLElement - метод возвращает полностью заполненную карточку с установленными слушателями
+- render(cardInfo: object): HTMLElement - метод возвращает полностью заполненную карточку с установленными слушателями
 - selectedCard(): string - id возвращает уникальный id карточки
-
-#### Класс fullCard
-Расширяет класс galleryCard и отвечает за отображение выбранной карточки в модальном окне, задает дополнительно описание карточки и отображает информацию о добавлении в корзину.\
-
-Методы:
-- addProduct(): void - добавление карточки в корзину
-- deleteProduct(): void - удаление карточки из корзины
-- render(): HTMLElement - расширяет родительский метод, добавляются новые свойства
-
-#### Класс basketCard
-Отвечает за отображение выбранных карточек в корзие, задавая в карточке данные названия и цены. В конструктор класса передается DOM элемент темплейта, что позволяет при необходимости формировать карточки разных вариантов верстки. В классе устанавливаются слушатели на все интерактивные элементы, в результате взаимодействия с которыми пользователя генерируются соответствующие события.\
-Поля класса содержат элементы разметки элементов карточки. Конструктор, кроме темплейта принимает экземпляр `EventEmitter` для инициации событий.\
-Методы:
-- setData(cardData: TBasketProduct): void - заполняет атрибуты элементов карточки данными
-- render(): HTMLElement - метод возвращает полностью заполненную карточку с установленными слушателями
-- deleteProductCard(): void - удаляет выбранную карточку
-
+- а так-же сеттеры и геттеры для получения и присвоения данных из полей класса.
 
 ## Слой коммуникации
 
@@ -368,15 +337,17 @@ interface galleryCard {
 *События изменения данных (генерируются классами моделями данных)*
 - `user:changed` - изменение данных пользователя
 - `cards:changed` - изменение массива карточек
-- `card:selected` - изменение открываемой в модальном окне картинки карточки
+- `card:selected` - изменение открываемой в модальном окне карточки продукта
 
 *События, возникающие при взаимодействии пользователя с интерфейсом (генерируются классами, отвечающими за представление)*
-- `basket:open` - открытие модального окна с корзиной 
-- `orderInfo:open` - открытие модального окна оформления заказа
-- `userOrderInfo:open` - открытие модального окна с формой сбора данных покупателя
+- `basket:open` - открытие модального окна с корзиной
+- `orderInfo:open` - открытие модального окна с формой сбора информации о способе оплаты, адресе доставки
+- `userOrderInfo:open` - открытие модального окна с формой сбора данных номер телефона, электронная почта
 - `card:select` - выбор карточки для отображения в модальном окне
-- `card:delete` - выбор карточки для удаления
-- `orderInfo:submit` - сохранение данных пользователя в модальном окне
-- `userOrderInfo:submit` - сохранение аватара пользователя в модальном окне
-- `orderInfo:validation` - событие, сообщающее о необходимости валидации формы профиля
-- `userOrderInfo:validation` - событие, сообщающее о необходимости валидации формы аватара пользователя
+- `card:add` - выбор карточки для добавления в корзину
+- `card:delete` - выбор карточки для удаления из корзины
+- `orderInfo:submit` - сохранение данных о способе оплаты и адресе доставки
+- `userInfo:submit` - сохранение информации о способе оплаты и адресе доставки
+- `orderInfo:validation` - событие, сообщающее о необходимости валидации формы сбора информации телефон покупателя, электронная почта
+- `userOrderInfo:validation` - событие, сообщающее о необходимости валидации формы сбора информации способ оплаты, адресс доставки
+- `modal:close` - событие, сообщающее о закрытии модального окна

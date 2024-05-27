@@ -8,7 +8,7 @@ export interface IProduct {
   image: string;
   category: string;
   price: number | null;
-} // то как приходит с сервера инфомация о товаре
+} // Полная инфомация о товаре
 
 export interface IOrder {
   payment: TPayment;
@@ -23,63 +23,59 @@ export type TPayment = 'cash' | 'card'; // тип данных для выбор
 
 export type TProductSelected = Pick<IProduct, 'id'> // тип данных для выбранного товара
 
-export type TBasketProduct = Pick<IProduct, 'id' | 'price' | 'title'>; // тип данных для отображения списка карточек в корзине
-
 export type TBasketInfo = Pick<IOrder, 'items' | 'total'>; // тип данных для отображения в корзине
 
-export type TOrderInfo = Pick<IOrder, 'payment' | 'address'>; // тип данных для модального окна выбор оплаты/адресс
+export type TBasketProduct = Pick<IProduct, 'title' | 'price' | 'id'>; //тип данных для отображения товара карточки в корзине
 
-export type TUserInfo = Pick<IOrder, 'phone' | 'email'>; // тип данных для модального окна информация о покупателе телефон/почта
+export type TGaleryProduct = Pick<IProduct, 'category' | 'title' | 'id' | 'image' | 'price'>; //тип данных для отображения карточки в галерее
+
+export type TOrderInfo = Pick<IOrder, 'payment' | 'address' | 'email' | 'phone'>; // тип данных для хранения информации о покупателе
+
+export type TOrderInfoForm = Pick<IOrder, 'address' | 'payment'>;// тип данных для формы ввода адреса и способа оплаты
+
+export type TUserInfoForm = Pick<IOrder, 'email' | 'phone'>;// типа данных для формы ввода телефона и почты
 
 export type TOrderSuccess = Pick<IOrder, 'total'>; // тип данных для модального окна успешного заказа
 
 // интерфейсы модели данных
 export interface IProductData {
-  productCards: IProduct[];
-  //массив карточек
-  preview: TProductSelected | null;
-  //выбранная для просмотра карточка
-  basketProducts: TProductSelected[];
-  //карточки в корзине
-  getCard(productId: TProductSelected): IProduct;
-  //получить карточку по id
-  addProduct(product: TProductSelected, payload: Function | null): void;
-  //добавить карточку в корзину
-  deleteProduct(product: TProductSelected, payload: Function | null): void;
-  //удалить карточку из корзины
-  checkProductId(id: TProductSelected, basketList: TProductSelected[]): boolean;
-  //валидация id перед добавлением в корзину
+  productCards: IProduct[];  //Массив карточек
+  preview: TProductSelected | null;  //Id выбранной карточки
+  getCard(productId: TProductSelected): IProduct;  //Получить информацию о выбранной карточке по id из массива всех карточек
+  setProduct(product: TProductSelected, payload: Function | null): void;  //Добавление id карточки в массив корзины
+  deleteProduct(product: TProductSelected, payload: Function | null): void;  //Удаление id карточки из корзины
+  getProductList(): IProduct[];  //Получить массив всех карточек продукта с сервера в определенном формате
 }
 
 export interface IOrderData {
-  getUserInfo(): TUserInfo;
-  getOrderInfo(): TOrderInfo;
-  getBasketInfo(): TBasketInfo;
-  setFullOrderInfo(userData: IOrder): void;
-  checkOrderValidation(data: Record<keyof TOrderInfo, string>): boolean;
-  checkUserInfo(data: Record<keyof TUserInfo, string>): boolean;
+  payment: TPayment //способ оплаты товара 
+  email: string //электронная почта покупателя 
+  phone: string //номер телефона покупателя 
+  address: string //адресс покупателя
+  getOrderInfo(orderInfo: TOrderInfo, productInfo: TProductSelected[]): IOrder; //получает данные пользователя о заказе
+  setFullOrderInfo(userData: IOrder): void; //отправляет данные о заказе в определенном формате на сервер (покупка)
+  checkOrderValidation(data: Record<keyof TOrderInfo, string>): boolean; // проверяет валидность введенных данных
 }
 
 export interface IBasketData {
-  basketCards: TBasketProduct[];
-  selected: TProductSelected | null;
-  getTotalPrice(prices: number[]): number;
-  deleteProduct(product: TProductSelected, payload: Function | null): void;
+  basketCards: TProductSelected[];  //список id добавленных в корзину карточек
+  getTotalPrice(prices: number[]): number;  //получение общей суммы суммы заказа
+  checkProductId(id: TProductSelected, basketList: TProductSelected[]): boolean;  //проверяет id карточек при добавлении в корзину
+  resetProductBasket(): void;  //удаление id всех товаров из списка корзины после успешного оформления заказа
 }
 
 //интерфейсы отображения данных
 
 export interface IPage {
   basketCount: HTMLElement;
-  count: number;
   galeryList: HTMLUListElement;
-  render(card: HTMLElement): void;
+  render(card: HTMLElement[] | null): void;
 }
 
 export interface IModal {
   modal: HTMLElement;
   events: IEvents;
-  addConten(elem: HTMLTemplateElement): void;
+  addConten(elem: HTMLElement): void;
   openModal(): void;
   closeModal(): void;
 }
@@ -106,42 +102,8 @@ export interface IBasketModal extends IModal {
 }
 
 export interface ISuccessModal extends IModal {
-  total: number;
   totalOrderPrice: HTMLElement;
   submitButton: HTMLButtonElement;
   closeModal(): void;
 }
 
-export interface IProductModal extends IModal {
-  addButton: HTMLButtonElement;
-  addButtonText: string;
-  deleteButtonText: string;
-  checkButtonStatus(): boolean;
-}
-
-export interface IGalleryCard {
-  productItem: HTMLTemplateElement;
-  productTitle: HTMLElement;
-  productImage: HTMLImageElement;
-  productPrice: HTMLElement;
-  setProductInfo(userData: IProduct): void;
-  render(): HTMLElement;
-  selectedCard(): string;
-}
-
-export interface IfullCard extends IGalleryCard {
-  productDescription: HTMLElement;
-  addProduct(): void;
-  deleteProduct(): void;
-  render(): HTMLElement;
-}
-
-export interface IbasketCard {
-  productItem: HTMLTemplateElement;
-  productTitle: HTMLElement;
-  productPrice: HTMLElement;
-  deleteButtton: HTMLButtonElement;
-  setData(cardData: TBasketProduct): void;
-  deleteProductCard(): void;
-  render(): HTMLElement;
-}
