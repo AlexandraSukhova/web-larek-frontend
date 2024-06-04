@@ -218,10 +218,8 @@ interface galleryCard {
 - events: IEvents - экземпляр класса `EventEmitter` для инициации событий при изменении данных.
 
 Так же класс предоставляет набор методов для взаимодействия с этими данными.
-- setProduct(product: TProductSelected, payload: Function | null): void - добавляет id выбранной карточки в массив корзины.
-- deleteProduct(product: TProductSelected, payload: Function | null): void - удаляет id карточки из массива корзины. Если передан колбэк, то выполняет его после удаления, если нет, то вызывает событие изменения массива.
 - getCard(productId: TProductSelected): IProduct - возвращает информацию о выбранной карточке из массива по ее id.
-- getProductList(): IProduct[] - получает массив всех карточек с сервера.
+- setProductList(): IProduct[] - получает массив всех карточек с сервера.
 - а так-же сеттеры и геттеры для сохранения и получения данных из полей класса.
 
 #### Класс OrderData
@@ -235,8 +233,8 @@ interface galleryCard {
 - events: IEvents - экземпляр класса `EventEmitter` для инициации событий при изменении данных.
 
 Так же класс предоставляет набор методов для взаимодействия с этими данными.\
-- getOrderInfo(orderInfo: TOrderInfo, productInfo: TProductSelected[]): IOrder - получение данных о адрессе доставки, способе оплаты, приобретаемых товарах
-- setFullOrderInfo(userData: IOrder): void - отправляет данные о заказе в определенном формате на сервер (имитация покупки и оплаты)
+- setOrderInfo(orderInfo: TOrderInfo, productInfo: TProductSelected[]): IOrder - получение данных о адрессе доставки, способе оплаты, приобретаемых товарах
+- postFullOrderInfo(userData: IOrder): void - отправляет данные о заказе в определенном формате на сервер (имитация покупки и оплаты)
 - checkOrderValidation(data: Record<keyof TOrderInfo, string>): boolean; - проверяет объект с данными заказа на валидность.
 
 #### Класс BasketData
@@ -246,6 +244,9 @@ interface galleryCard {
 - _basketCards: TBasketProduct[] - массив выбранных карточек
 
 Так же класс предоставляет набор методов для взаимодействия с этими данными.\
+- setProduct(product: TProductSelected, payload: Function | null): void - добавляет id выбранной карточки в массив корзины.
+- deleteProduct(product: TProductSelected, payload: Function | null): void - удаляет id карточки из массива корзины. Если передан колбэк, то выполняет его после удаления, если нет, то вызывает событие изменения массива.
+- getBasketCards(id: string): TBasketProduct[] - получение массива id карточек товара
 - getTotalPrice(prices: number[]): number - получение общей суммы заказа
 - checkProductId(id: TProductSelected, basketList: TProductSelected[]): boolean; - проверяет id карточек перед добавлением в корзину
 - resetProductBasket(): void; - удаление id всех товаров из списка корзины после успешного оформления заказа
@@ -321,7 +322,6 @@ interface galleryCard {
 - setProductInfo(userData: IProduct): void - заполняет атрибуты элементов карточки данными
 - render(cardInfo: object): HTMLElement - метод возвращает полностью заполненную карточку с установленными слушателями
 - selectedCard(): string - id возвращает уникальный id карточки
-- а так-же сеттеры и геттеры для получения и присвоения данных из полей класса.
 
 ## Слой коммуникации
 

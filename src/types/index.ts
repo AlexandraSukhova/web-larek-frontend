@@ -42,8 +42,6 @@ export interface IProductData {
   productCards: IProduct[];  //Массив карточек
   preview: TProductSelected | null;  //Id выбранной карточки
   getCard(productId: TProductSelected): IProduct;  //Получить информацию о выбранной карточке по id из массива всех карточек
-  setProduct(product: TProductSelected, payload: Function | null): void;  //Добавление id карточки в массив корзины
-  deleteProduct(product: TProductSelected, payload: Function | null): void;  //Удаление id карточки из корзины
   getProductList(): IProduct[];  //Получить массив всех карточек продукта с сервера в определенном формате
 }
 
