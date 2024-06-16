@@ -19,7 +19,9 @@ export class OrderInfo extends Form<IOrder> {
       const field = 'payment';
       const value = target.name;
       this.onButtonChange(value, field);
-      events.emit('check:buttonState');
+      if(!target.classList.contains('button_alt-active')) {
+        this.setButtonState();
+          }
         }
       )
     )
@@ -32,11 +34,11 @@ export class OrderInfo extends Form<IOrder> {
     });
   }
 
-  setButtonState(buttonOneName: string, buttonTwoName: string, activeClass: string) {
-    const buttonOne: HTMLButtonElement = this._buttonContainer.querySelector(`[name=${buttonOneName}]`);
-    const buttonTwo: HTMLButtonElement = this._buttonContainer.querySelector(`[name=${buttonTwoName}`);
-    this.toggleClass(buttonOne, activeClass);
-    this.toggleClass(buttonTwo, activeClass);
+  setButtonState() {
+    const buttonCard: HTMLButtonElement = this._buttonContainer.querySelector(`[name=card]`);
+    const buttonCash: HTMLButtonElement = this._buttonContainer.querySelector(`[name=cash`);
+    this.toggleClass(buttonCard, 'button_alt-active');
+    this.toggleClass(buttonCash, 'button_alt-active');
   }
 
   set payment(value: string) {

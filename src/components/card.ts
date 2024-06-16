@@ -1,21 +1,23 @@
 import { Component } from './base/Component';
 import { ensureElement} from '../utils/utils';
+import { settings } from '../utils/constants';
+import { TCategory } from '../types';
 
 
 interface ICardActions {
   onClick: (event: MouseEvent) => void;
 }
 
-export interface ICard<T> {
+export interface ICard {
   title: string;
   description?: string | string[];
   image?: string;
   price: number | null;
-  category?: string;
+  category?: TCategory;
   index?: number;
 }
 
-export class Card<T> extends Component<ICard<T>> {
+export class Card extends Component<ICard> {
   protected _title: HTMLElement;
   protected _image?: HTMLImageElement;
   protected _description?: HTMLElement;
@@ -78,12 +80,9 @@ export class Card<T> extends Component<ICard<T>> {
     }
   }
 
-  set category(value: string) {
+  set category(value: TCategory) {
     this.setText(this._category, value);
-  }
-
-  setCategoryColor(value: string) {
-    this._category.classList.add(`${this.blockName}__category_${value}`);
+    this._category.classList.add(`${this.blockName}__category_${settings.cardCategory[value]}`);
   }
 
   set image(value: string) {

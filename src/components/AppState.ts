@@ -20,7 +20,7 @@ export class ProductsData extends Model<IProduct> {
   //Сохранить id выбранной карточки в поле класса
     set productId(id: string) {
       this.preview = id;
-      this.emitChanges('preview:chenge', this.getSelectedCard);
+      this.emitChanges('preview:change', this.getSelectedCard);
     }
   //Получить id выбранной карточки
     get productId() {
@@ -28,20 +28,14 @@ export class ProductsData extends Model<IProduct> {
     }
   //Получить объект с одной выбранной карточкой
     getSelectedCard(): IProduct {
-      let cardInfo: IProduct
-      this.productCards.forEach(card => {
-        if(card.id === this.preview){
-          return cardInfo = card;
-        }
-      })
-      return cardInfo
+      const selectedCard = this.productCards.find(card => card.id === this.preview);
+      return selectedCard
     }
   }
   
   export class BasketData extends Model<IProduct>{
   basketCards: IProduct[] = [];
   added: boolean;
-  basketMessage: TBasketMessage;
   
     get basketCardsInfo() {
       return this.basketCards;
@@ -50,25 +44,17 @@ export class ProductsData extends Model<IProduct> {
     deleteProduct(product: IProduct): void {
       this.checkProductId(product);
       if(this.added) {
-        this.basketCards = this.basketCards.filter(card => card.id !== product.id)
-        this.basketMessage = 'Товар успешно удален из корзины'
-        console.log(this.basketMessage)
-      } else {
-        this.basketMessage = 'Ошибка! Товар уже находится в корзине'
-        console.log(this.basketMessage)}
-        this.emitChanges('basketProduct:chenge', this.basketCards)
+        this.basketCards = this.basketCards.filter(card => card.id !== product.id);
+      }
+        this.emitChanges('basketProduct:change', this.basketCards)
     }
   
     addProduct(product: IProduct): void {
       this.checkProductId(product);
       if(!this.added) {
         this.basketCards.push(product);
-        this.basketMessage = 'Товар успешно добавлен в корзину'
-        console.log(this.basketMessage)
-      } else {
-        this.basketMessage = 'Ошибка! Товар уже находится в корзине'
-        console.log(this.basketMessage)}
-        this.emitChanges('basketProduct:chenge', this.basketCards)
+      }
+        this.emitChanges('basketProduct:change', this.basketCards)
     }
   
     checkProductId(product: IProduct): boolean {
@@ -98,31 +84,21 @@ export class ProductsData extends Model<IProduct> {
   
     resetProductBasket(): void {
         this.basketCards.splice(0, this.basketCards.length);
-        this.emitChanges('basketProduct:chenge', this.basketCards);
+        this.emitChanges('basketProduct:change', this.basketCards);
     }
   }
   
   export class OrderData extends Model<IOrder>{
-    order: IOrder = {
+    order: TOrderInfo = {
       payment: 'card',
       email: '',
       phone: '',
-      address: '',
-      total: 0,
-      items: []
+      address: ''
     };
     formErrors: FormErrors = {};
   
     set orderPayment(payment: TPayment) {
       this.order.payment = payment;
-    }
-  
-    set items(items: string[]) {
-      this.order.items = items;
-    }
-
-    set total (total: number) {
-      this.order.total = total;
     }
 
     setOrderField(field: keyof TOrderInfo, value: string) {

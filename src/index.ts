@@ -8,7 +8,7 @@ import { OrderInfo, UserInfo } from './components/order';
 import { Page } from './components/page';
 import { Success } from './components/success';
 import './scss/styles.scss';
-import {IProduct, TOrderInfo} from './types';
+import {IOrder, IProduct, TOrderInfo} from './types';
 import { API_URL, CDN_URL, settings } from './utils/constants';
 import { ensureElement, createElement, cloneTemplate} from './utils/utils';
 
@@ -32,7 +32,8 @@ const basket = new BasketData({}, events);
 const modal = new Modal(modalContainer, events);
 const orderInfo = new OrderInfo(cloneTemplate(orderFormTemplate), events);
 const userInfo = new UserInfo(cloneTemplate(contactsFormTemplate), events);
-const orderData = new OrderData({}, events)
+const orderData = new OrderData({}, events);
+const basketModal = new Basket(cloneTemplate(basketTemplate), events);
 
 // Чтобы мониторить все события, для отладки
 events.onAll(({ eventName, data }) => {
@@ -46,7 +47,6 @@ events.on<GaleryChangeEvent>('items:changed', () => {
         onClick: () => events.emit('card:select', item)
       });
 
-      card.setCategoryColor(settings.cardCategory[item.category]);
       return card.render({
           title: item.title,
           image: item.image,
@@ -56,7 +56,7 @@ events.on<GaleryChangeEvent>('items:changed', () => {
   });
 })
 
-events.on('preview:chenge', () => {
+events.on('preview:change', () => {
   const cardInfo = products.getSelectedCard();
   const card = new Card('card', cloneTemplate(cardPreviewTemplate),
   {
@@ -73,7 +73,6 @@ events.on('preview:chenge', () => {
   });
 
   basket.checkProductId(products.getSelectedCard());
-
   if(cardInfo.price === null) {
     card.setText(card.button, 'Это подарок судьбы!')
     card.setDisabled(card.button, true)
@@ -82,7 +81,6 @@ events.on('preview:chenge', () => {
     card.setText(card.button, 'Удалить из корзины')
   }
 
-  card.setCategoryColor(settings.cardCategory[cardInfo.category]);
   const cardPreview = card.render(
     {
       title: cardInfo.title,
@@ -118,13 +116,11 @@ events.on('modal:close', () => {
   page.locked = false;
 });
 
-events.on('basketProduct:chenge',() => {
+events.on('basketProduct:change',() => {
   page.counter = basket.basketCardsInfo.length
 })
 
 events.on('basket:open', () => {
-  const basketModal = new Basket(cloneTemplate(basketTemplate), events);
-
   const basketCards: HTMLElement[] = basket.basketCardsInfo.map(item => {
     const card = new Card('card', cloneTemplate(cardBasketTemplate), {
     onClick: () => {
@@ -153,7 +149,7 @@ events.on('basket:open', () => {
 });
 
 events.on('formErrors:change', (errors: Partial<TOrderInfo>) => {
-  const { email, phone, address, payment} = errors;
+  const {email, phone, address, payment} = errors;
   orderInfo.valid = !address && !payment;
   orderInfo.errors = Object.values({address, payment}).filter(i => !!i).join('; ');
   userInfo.valid = !email && !phone;
@@ -171,10 +167,6 @@ events.on(/^contacts\..*:change/, (data: { field: keyof TOrderInfo, value: strin
 
 // Открыть форму заказа
 events.on('order:open', () => {
-
-  orderData.items = basket.getBasketProductsId();
-  orderData.total = basket.getTotalPrice();
-
   modal.render({
       content: orderInfo.render({
           address: orderData.order.address,
@@ -192,21 +184,21 @@ events.on('order:submit', () => {
         valid: false,
         errors: []
     })
-});
-})
-
-events.on('check:buttonState', () => {
-  orderInfo.setButtonState('card', 'cash', 'button_alt-active');
+  });
 })
 
 events.on('contacts:submit', () => {
 
-  api.orderProduct(orderData.order)
+  const fullOrder = orderData.order as IOrder
+  fullOrder.total = basket.getTotalPrice();
+  fullOrder.items = basket.getBasketProductsId();
+
+  api.orderProduct(fullOrder)
   .then(res => {
+    basket.resetProductBasket();
+    orderData.resetOrderInfo();
     const success = new Success(cloneTemplate(successTemplate), {
       onClick: () => {
-        basket.resetProductBasket();
-        orderData.resetOrderInfo();
         modal.close();
       }
     })
